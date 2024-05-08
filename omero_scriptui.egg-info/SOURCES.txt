@@ -1,0 +1,9 @@
+README.md
+setup.py
+omero_scriptui/__init__.py
+omero_scriptui/urls.py
+omero_scriptui/views.py
+omero_scriptui.egg-info/PKG-INFO
+omero_scriptui.egg-info/SOURCES.txt
+omero_scriptui.egg-info/dependency_links.txt
+omero_scriptui.egg-info/top_level.txt

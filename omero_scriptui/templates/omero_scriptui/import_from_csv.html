@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="referrer" content="origin-when-crossorigin" />
+
+    <link
+      rel="stylesheet"
+      href="/web/static/3rdparty/jquery.chosen-1.8.7/chosen.css"
+      type="text/css"
+      media="screen"
+    />
+
+    <style type="text/css">
+      h3 {
+        margin: 0px;
+      }
+      div.param {
+        margin: 3px;
+        font-size: 85%;
+      }
+      div.parent {
+        border: 1px solid #aaa;
+        margin: 3px 0px;
+      }
+      div.parent > div:first-child {
+        background: #ddd;
+        border-bottom: 1px solid #ccc;
+        margin: 0px;
+        padding: 2px;
+      }
+      input {
+        padding: 0px;
+        margin: 0px;
+      }
+      body {
+        font-family: Arial;
+        background: #eee;
+        margin: 0px;
+        padding: 0px;
+      }
+      #script_desc {
+        font-size: 85%;
+        margin: 8px 0px;
+        background: #ddd;
+        border: 1px solid #aaa;
+      }
+      #script_desc p {
+        margin: 2px;
+      }
+      div.footer {
+        background: #ddd;
+        position: fixed;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        padding: 7px;
+        border-top: 1px solid #aaa;
+        font-size: 80%;
+      }
+      a {
+        text-decoration: none;
+      }
+    </style>
+
+    <!-- extend here to add page title -->
+    <title>Run Import from CSV</title>
+
+    <!-- block for javascript <script> -->
+
+    <script src="/web/static/3rdparty/jquery-3.6.2.min.js"></script>
+
+    <script
+      type="text/javascript"
+      src="/web/static/webgateway/js/ome.csrf.js?_5.25.1.dev0"
+    ></script>
+
+    <script
+      type="text/javascript"
+      src="/web/static/webgateway/js/ome.popup.js?_5.25.1.dev0"
+    ></script>
+
+    <link
+      rel="stylesheet"
+      href="/web/static/3rdparty/jquery-ui-1.13.2/css/jquery-ui.css"
+      type="text/css"
+    />
+    <script
+      type="text/javascript"
+      src="/web/static/3rdparty/jquery-ui-1.13.2/js/jquery-ui.js"
+    ></script>
+
+    <!-- Disable JQuery UI Tabs Keyboard Navigation -->
+    <script type="text/javascript">
+      $.widget("ui.tabs", $.ui.tabs, {
+        _tabKeydown: function (event) {
+          if (
+            event.keyCode !== 37 &&
+            event.keyCode !== 38 &&
+            event.keyCode !== 39 &&
+            event.keyCode !== 40
+          ) {
+            this._super(event);
+          }
+        },
+      });
+    </script>
+    <script
+      type="text/javascript"
+      src="/web/static/3rdparty/jquery.form-4.3.0.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="/web/static/3rdparty/jquery.chosen-1.8.7/chosen.jquery.js"
+    ></script>
+    <script type="text/javascript">
+      $(document).ready(function () {
+        OME.setupAjaxError("/web/feedback/feedback/"); // just in case!
+
+        $("#script_form").ajaxForm({
+          beforeSubmit: function () {
+            $("#submit").prop("disabled", true);
+          },
+          success: function (data) {
+            window.opener.OME.showActivities();
+            self.close();
+          },
+        });
+
+        // for any 'list' parameters with enum options, controls to add / remove
+        $(".addListSelect").on("click", function (e) {
+          var $lastSelect = $(this).parent().children("select").last();
+          $lastSelect.after($lastSelect.clone());
+          $lastSelect.after(" ");
+          e.preventDefault();
+          return false;
+        });
+        $(".removeListSelect").on("click", function (e) {
+          var selectCount = $(this).parent().find("select").length;
+          if (selectCount > 1) {
+            var $lastSelect = $(this).parent().children("select").last();
+            $lastSelect.remove();
+          }
+          e.preventDefault();
+          return false;
+        });
+
+        // for any 'map' parameters in the UI, add controls to add key:value fields
+        $(".addKeyValue").on("click", function () {
+          var $keyValueTable = $(this).parent().next().find(".map");
+          var rowCount = $keyValueTable.find("tr").length;
+          var $newRow = $("tr", $keyValueTable).first().clone();
+          var $keyInput = $newRow.find("input:eq(0)");
+          var $valueInput = $newRow.find("input:eq(1)");
+          // give the new inputs unique names, based on number of key:value pairs
+          // E.g. name='Channel_Names_key0' -> 'Channel_Names_key1'
+          $keyInput.attr(
+            "name",
+            $keyInput.attr("name").slice(0, -1) + rowCount
+          );
+          $valueInput.attr(
+            "name",
+            $valueInput.attr("name").slice(0, -1) + rowCount
+          );
+          $keyInput.attr("value", "");
+          $valueInput.attr("value", "");
+          $keyValueTable.append($newRow);
+          return false;
+        });
+        $(".removeKeyValue").on("click", function (e) {
+          var $keyValueTable = $(this).parent().next().find(".map");
+          var rowCount = $keyValueTable.find("tr").length;
+          if (rowCount > 1) {
+            var $lastRow = $("tr", $keyValueTable).last();
+            $lastRow.remove();
+          }
+          e.preventDefault();
+          return false;
+        });
+
+        // If 'Data_Type' changes, clear 'IDs' (but note values to add back)
+        var $Data_Type = $("select[name=Data_Type]"),
+          $IDs = $("input[name=IDs]");
+        var noteIDs = function () {
+          var dt = $Data_Type.val(),
+            ids = $IDs.val();
+          $Data_Type.data(dt, ids);
+        };
+        noteIDs(); // note the initial value...
+        $IDs.on("keyup", noteIDs); // ...update any changes
+        $Data_Type.on("change", function () {
+          // Clear IDs (or add back previous data)
+          var dt = $Data_Type.val(),
+            ids = $Data_Type.data(dt);
+          if (typeof ids !== "undefined") {
+            $IDs.val(ids);
+          } else {
+            $IDs.val("");
+          }
+        });
+
+        // For 'number' fields, only allow numbers input.
+        $(".number").numbersOnly();
+
+        // Only use the chosen plugin if we have > 20 options
+        $("select").each(function () {
+          var limit = 20;
+          var $this = $(this);
+          if ($("option", $this).length > limit) {
+            $this.chosen({
+              search_contains: true,
+              width: "300px",
+            });
+          }
+        });
+
+        // Focus first input
+        $("input:visible, select:visible").first().trigger("focus");
+      });
+    </script>
+
+    <!-- block for extra head elements (not css or javascript) E.g. icon, meta tags -->
+
+    <link rel="icon" href="/web/favicon.ico" type="image/x-icon" />
+  </head>
+  <body>
+    <form
+      id="script_form"
+      method="post"
+      action="/web/webclient/script_run/16153/"
+    >
+      <input
+        type="hidden"
+        name="csrfmiddlewaretoken"
+        value="QUH3iHeqFEgaPx7vAPjm7q8EJkm7Am75DVNAuS8VwxxnRfRHf22TtxGYTSM1BNzi"
+      />
+      <div style="padding: 10px; margin-bottom: 40px">
+        <h3 id="scriptName">Import from CSV</h3>
+        <div id="script_desc">
+          <p>
+            <br />
+            Import key-value pairs and tags from a CSV file.<br />
+            <br />
+            Check the guide for more information on parameters and errors:<br />
+            https://guide-kvpairs-scripts.readthedocs.io/en/latest/index.html<br />
+            <br />
+            Default namespace: openmicroscopy.org/omero/client/mapAnnotation<br />
+          </p>
+
+          <div>
+            <b>Authors:</b> Christian Evenhuis, Tom Boissonnet, Jens Wendt
+          </div>
+          <div><b>Contact:</b> https://forum.image.sc/tag/omero</div>
+          <div><b>Version:</b> 2.0.0</div>
+        </div>
+
+        <div class="required parent">
+          <div class="param" title="Data type of the parent objects.">
+            <table border="0" cellpadding="0" cellspacing="1">
+              <tr>
+                <td valign="top">
+                  Data Type:
+
+                  <span style="color: red">*</span>
+                </td>
+                <td valign="top">
+                  <!-- List - Users should enter comma-separated values into field -->
+
+                  <!-- drop-down list of enums -->
+                  <select tabindex="1" name="Data_Type">
+                    <option value="Project">Project</option>
+
+                    <option value="Dataset" selected="True">Dataset</option>
+
+                    <option value="Image">Image</option>
+
+                    <option value="Screen">Screen</option>
+
+                    <option value="Plate">Plate</option>
+
+                    <option value="Well">Well</option>
+
+                    <option value="Acquisition">Acquisition</option>
+
+                    <option value="Image">Image</option>
+
+                    <option value="Tag">Tag</option>
+                  </select>
+
+                  <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin-left: 20px">
+            <div class="param" title="IDs of the parent objects">
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">
+                    IDs:
+
+                    <span style="color: red">*</span>
+                  </td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <img
+                      src="/web/static/webclient/image/info16.png"
+                      title="Add items to list, separated by ','"
+                    />
+                    <input tabindex="1" type="text" name="IDs" value="" />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="Data type to process from the selected parent objects."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">
+                    Target Data Type:
+
+                    <span style="color: red">*</span>
+                  </td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <!-- drop-down list of enums -->
+                    <select tabindex="1" name="Target Data_Type">
+                      <option value="&lt;on current&gt;" selected="True">
+                        &lt;on current&gt;
+                      </option>
+
+                      <option value="Project">Project</option>
+
+                      <option value="- Dataset">- Dataset</option>
+
+                      <option value="-- Image">-- Image</option>
+
+                      <option value="Screen">Screen</option>
+
+                      <option value="- Plate">- Plate</option>
+
+                      <option value="-- Well">-- Well</option>
+
+                      <option value="-- Acquisition">-- Acquisition</option>
+
+                      <option value="--- Image">--- Image</option>
+                    </select>
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="If no file is provided, list of file IDs containing metadata to populate (one per ID). Otherwise, takes the most recent CSV on each parent object."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">File Annotation:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input tabindex="1" type="text" name="File_Annotation" />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+
+                    OR <input name="file_annotation" type="file" />
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="Namespace assigned to the key-value pairs. Default is the client namespace (editable in OMERO.web)."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">
+                    Namespace (blank for default or from csv):
+                  </td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="text"
+                      name="Namespace (blank for default or from csv)"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="parent">
+          <div
+            class="param"
+            title="Check this box to allow the import of tags."
+          >
+            <table border="0" cellpadding="0" cellspacing="1">
+              <tr>
+                <td valign="top">Import tags:</td>
+                <td valign="top">
+                  <!-- List - Users should enter comma-separated values into field -->
+
+                  <input
+                    tabindex="1"
+                    type="checkbox"
+                    name="Import tags"
+                    checked="True"
+                  />
+
+                  <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin-left: 20px">
+            <div
+              class="param"
+              title="Restrict the usage of tags to the ones owned by the user. If checked, tags owned by others will not be considered for the creation of new tags."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Only use personal tags:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="checkbox"
+                      name="Only use personal tags"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="Creates new tags and tagsets if the ones specified in the CSV do not exist."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Allow tag creation:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="checkbox"
+                      name="Allow tag creation"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="parent">
+          <div class="param" title="Ticking or unticking this has no effect">
+            <table border="0" cellpadding="0" cellspacing="1">
+              <tr>
+                <td valign="top">Other parameters:</td>
+                <td valign="top">
+                  <!-- List - Users should enter comma-separated values into field -->
+
+                  <input
+                    tabindex="1"
+                    type="checkbox"
+                    name="Other parameters"
+                    checked="True"
+                  />
+
+                  <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin-left: 20px">
+            <div class="param" title="Skip the keys with empty values.">
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Exclude empty values:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="checkbox"
+                      name="Exclude empty values"
+                      checked="True"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="Separator used in the CSV file. &#x27;guess&#x27; will attempt to detetect automatically which of ,;\t to use."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">CSV separator:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <!-- drop-down list of enums -->
+                    <select tabindex="1" name="CSV separator">
+                      <option value="guess" selected="True">guess</option>
+
+                      <option value=";">;</option>
+
+                      <option value=",">,</option>
+
+                      <option value="TAB">TAB</option>
+                    </select>
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="Separator used to split cells into multiple key-value pairs."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Split values on:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="text"
+                      name="Split values on"
+                      value=""
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="Columns to exclude from the key-value pairs. &lt;ID&gt; and &lt;NAME&gt; correspond to the column name specified by the next two parameters. &lt;PARENTS&gt; matches all {PROJECT, DATASET, SCREEN, PLATE, RUN, WELL}."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Columns to exclude:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <img
+                      src="/web/static/webclient/image/info16.png"
+                      title="Add items to list, separated by ','"
+                    />
+                    <input
+                      tabindex="1"
+                      type="text"
+                      name="Columns to exclude"
+                      value="&lt;ID&gt;,&lt;NAME&gt;,&lt;PARENTS&gt;"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="The column name in the CSV containing the objects IDs."
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Target ID colname:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="text"
+                      name="Target ID colname"
+                      value="OBJECT_ID"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div
+              class="param"
+              title="The column name in the CSV containing the objects names. (used only if the column ID is not found"
+            >
+              <table border="0" cellpadding="0" cellspacing="1">
+                <tr>
+                  <td valign="top">Target name colname:</td>
+                  <td valign="top">
+                    <!-- List - Users should enter comma-separated values into field -->
+
+                    <input
+                      tabindex="1"
+                      type="text"
+                      name="Target name colname"
+                      value="OBJECT_NAME"
+                    />
+
+                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <div style="float: right">
+          <a href="#" tabindex="3" onClick="self.close()">Cancel</a>
+          <input id="submit" tabindex="2" type="submit" value="Run Script" />
+        </div>
+        <a
+          href="/web/webclient/get_original_file/16153/"
+          tabindex="0"
+          target="_blank"
+        >
+          View Script
+        </a>
+      </div>
+    </form>
+
+    <!-- settings.BASE_INCLUDE_TEMPLATE included here -->
+  </body>
+</html>

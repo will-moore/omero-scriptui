@@ -22,4 +22,7 @@ from . import views
 urlpatterns = [
     # index 'home page' of the app
     re_path(r"^$", views.index, name="omero_scriptui_index"),
+
+    re_path(r"^import_from_csv/$", views.import_from_csv,
+            name="scriptui_import_from_csv"),
 ]

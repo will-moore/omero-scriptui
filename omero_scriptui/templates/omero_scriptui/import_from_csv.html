@@ -14,12 +14,18 @@
     />
 
     <style type="text/css">
+      form {
+        margin: 15px;
+      }
       h3 {
         margin: 0px;
       }
+      label {
+        display: block;
+        margin: 5px 0;
+      }
       div.param {
         margin: 3px;
-        font-size: 85%;
       }
       div.parent {
         border: 1px solid #aaa;
@@ -74,6 +80,9 @@
       .exclude td {
         text-align: center;
       }
+      details {
+        margin: 10px 0;
+      }
     </style>
 
     <!-- extend here to add page title -->
@@ -94,6 +103,10 @@
 
       <div style="padding: 10px; margin-bottom: 40px">
         <h3 id="scriptName">Import from CSV</h3>
+
+      <details>
+        <summary>Script info</summary>
+
         <div id="script_desc">
           <p>
             <br />
@@ -111,6 +124,7 @@
           <div><b>Contact:</b> https://forum.image.sc/tag/omero</div>
           <div><b>Version:</b> 2.0.0</div>
         </div>
+      </details>
 
         {% if source_names %}
         <h3>Annotating {{ source_dtype }}{{ source_names|pluralize }}:
@@ -119,138 +133,75 @@
         {% endif %}
 
 
-        <div style="margin: 10px 0">
+        <label>
           Target Data Type: <span style="color: red">*</span>
           <select tabindex="1" name="Target Data_Type">
             {% for dtype in target_types %}
               <option value="{% if dtype != source_dtype %}-- {% endif %}{{ dtype }}">{{ dtype }}</option>
             {% endfor %}
           </select>
-        </div>
+        </label>
 
 
-        <div>
-          <label title="The column name in the CSV containing the objects IDs.">Target Column (ID or Name)</label>
+        <label title="The column name in the CSV containing the objects IDs.">Target Column (ID or Name)
           <select id="target_column">
             <!-- options added when CSV loaded -->
           </select>
-        </div>
+        </label>
 
         <div id="csv_info" style="margin: 30px 0">
           <div style="margin: 20px">
             <h3>Drag and Drop your CSV file here...</h3>
-            (or enter File Annotation ID below)
+            or enter File Annotation ID(s) below, containing metadata to populate (one per ID).<br>
+            Otherwise, script takes the most recent CSV on each parent object.
           </div>
         </div>
 
-        <div class="required parent">
-          <div class="param" title="Data type of the parent objects.">
-            <table border="0" cellpadding="0" cellspacing="1">
-              <tr>
-                <td valign="top">
-                  Data Type:
+        <label title="Enter File Annotation ID(s), containing metadata to populate (one per ID). Otherwise, script takes the most recent CSV on each parent object.">
+          File Annotation:
+          <input id="File_Annotation" tabindex="1" type="text" name="File_Annotation" />
+        </label>
 
-                  <span style="color: red">*</span>
-                </td>
-                <td valign="top">
-                  <!-- List - Users should enter comma-separated values into field -->
+        <label title="Namespace assigned to the key-value pairs. Default is the client namespace (editable in OMERO.web).">
+          Namespace (blank for default or from csv):
+          <input
+            tabindex="1"
+            type="text"
+            name="Namespace (blank for default or from csv)"
+          />
+        </label>
 
-                  <!-- drop-down list of enums -->
-                  <select tabindex="1" name="Data_Type">
-                    <option value="Project" {% if source_dtype == "Project" %}selected="True"{% endif %}>Project</option>
+        <label title="Skip the keys with empty values.">
+          Exclude empty values:
+          <input
+            tabindex="1"
+            type="checkbox"
+            name="Exclude empty values"
+            checked="True"
+          />
+        </label>
 
-                    <option value="Dataset" {% if source_dtype == "Dataset" %}selected="True"{% endif %}>Dataset</option>
+        <label title="Separator used in the CSV file. &#x27;guess&#x27; will attempt to detetect automatically which of ,;\t to use.">
+          CSV separator:
+          <select tabindex="1" name="CSV separator">
+            <option value="guess" selected="True">guess</option>
+            <option value=";">;</option>
+            <option value=",">,</option>
+            <option value="TAB">TAB</option>
+          </select>
+        </label>
 
-                    <option value="Image" {% if source_dtype == "Image" %}selected="True"{% endif %}>Image</option>
+        <label title="Separator used to split cells into multiple key-value pairs.">
+          Split values on:
+          <input
+            tabindex="1"
+            type="text"
+            name="Split values on"
+            value=""
+          />
+        </label>
 
-                    <option value="Screen" {% if source_dtype == "Screen" %}selected="True"{% endif %}>Screen</option>
 
-                    <option value="Plate" {% if source_dtype == "Plate" %}selected="True"{% endif %}>Plate</option>
-
-                    <option value="Well" {% if source_dtype == "Well" %}selected="True"{% endif %}>Well</option>
-
-                    <option value="Acquisition" {% if source_dtype == "Acquisition" %}selected="True"{% endif %}>Acquisition</option>
-
-                    <option value="Tag" {% if source_dtype == "Tag" %}selected="True"{% endif %}>Tag</option>
-                  </select>
-
-                  <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="margin-left: 20px">
-            <div class="param" title="IDs of the parent objects">
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">
-                    IDs:
-
-                    <span style="color: red">*</span>
-                  </td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <img
-                      src="/web/static/webclient/image/info16.png"
-                      title="Add items to list, separated by ','"
-                    />
-                    <input tabindex="1" type="text" name="IDs" value="{{ source_ids|join:',' }}" />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="If no file is provided, list of file IDs containing metadata to populate (one per ID). Otherwise, takes the most recent CSV on each parent object."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">File Annotation:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <input id="File_Annotation" tabindex="1" type="text" name="File_Annotation" />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-
-                    OR <input name="file_annotation" type="file" />
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="Namespace assigned to the key-value pairs. Default is the client namespace (editable in OMERO.web)."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">
-                    Namespace (blank for default or from csv):
-                  </td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <input
-                      tabindex="1"
-                      type="text"
-                      name="Namespace (blank for default or from csv)"
-                    />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="parent">
           <div
             class="param"
             title="Check this box to allow the import of tags."
@@ -319,178 +270,66 @@
               </table>
             </div>
           </div>
-        </div>
 
-        <div class="parent">
-          <div class="param" title="Ticking or unticking this has no effect">
-            <table border="0" cellpadding="0" cellspacing="1">
-              <tr>
-                <td valign="top">Other parameters:</td>
-                <td valign="top">
-                  <!-- List - Users should enter comma-separated values into field -->
 
-                  <input
-                    tabindex="1"
-                    type="checkbox"
-                    name="Other parameters"
-                    checked="True"
-                  />
+        <details>
+          <summary>Other fields (shold be populated automatically)</summary>
 
-                  <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                </td>
-              </tr>
-            </table>
-          </div>
+          <label>Data Type:
+            <select tabindex="1" name="Data_Type">
+              <option value="Project" {% if source_dtype == "Project" %}selected="True"{% endif %}>Project</option>
+              <option value="Dataset" {% if source_dtype == "Dataset" %}selected="True"{% endif %}>Dataset</option>
+              <option value="Image" {% if source_dtype == "Image" %}selected="True"{% endif %}>Image</option>
+              <option value="Screen" {% if source_dtype == "Screen" %}selected="True"{% endif %}>Screen</option>
+              <option value="Plate" {% if source_dtype == "Plate" %}selected="True"{% endif %}>Plate</option>
+              <option value="Well" {% if source_dtype == "Well" %}selected="True"{% endif %}>Well</option>
+              <option value="Acquisition" {% if source_dtype == "Acquisition" %}selected="True"{% endif %}>Acquisition</option>
+              <option value="Tag" {% if source_dtype == "Tag" %}selected="True"{% endif %}>Tag</option>
+            </select>
+          </label>
 
-          <div style="margin-left: 20px">
-            <div class="param" title="Skip the keys with empty values.">
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">Exclude empty values:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
+          <label>IDs:
+            <input tabindex="1" type="text" name="IDs" value="{{ source_ids|join:',' }}" />
+          </label>
+        
+          <label title="Columns to exclude from the key-value pairs. &lt;ID&gt; and &lt;NAME&gt; correspond to the column name specified by the next two parameters. &lt;PARENTS&gt; matches all {PROJECT, DATASET, SCREEN, PLATE, RUN, WELL}.">
+            Columns to exclude:
+            <input
+              id="Columns_to_exclude"
+              tabindex="1"
+              type="text"
+              name="Columns to exclude"
+              value="&lt;ID&gt;,&lt;NAME&gt;,&lt;PARENTS&gt;"
+            />
+          </label>
+                  
+          <label title="The column name in the CSV containing the objects IDs.">
+            Target ID colname:
+            <input
+              id="Target_ID_colname"
+              tabindex="1"
+              type="text"
+              name="Target ID colname"
+              value="OBJECT_ID"
+            />
+          </label>
 
-                    <input
-                      tabindex="1"
-                      type="checkbox"
-                      name="Exclude empty values"
-                      checked="True"
-                    />
+          <label title="The column name in the CSV containing the objects names. (used only if the column ID is not found">
+            Target name colname:
+            <input
+              id="Target_name_colname"
+              tabindex="1"
+              type="text"
+              name="Target name colname"
+              value="OBJECT_NAME"
+            />
+          </label>
+        </details>
 
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="Separator used in the CSV file. &#x27;guess&#x27; will attempt to detetect automatically which of ,;\t to use."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">CSV separator:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <!-- drop-down list of enums -->
-                    <select tabindex="1" name="CSV separator">
-                      <option value="guess" selected="True">guess</option>
-
-                      <option value=";">;</option>
-
-                      <option value=",">,</option>
-
-                      <option value="TAB">TAB</option>
-                    </select>
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="Separator used to split cells into multiple key-value pairs."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">Split values on:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <input
-                      tabindex="1"
-                      type="text"
-                      name="Split values on"
-                      value=""
-                    />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="Columns to exclude from the key-value pairs. &lt;ID&gt; and &lt;NAME&gt; correspond to the column name specified by the next two parameters. &lt;PARENTS&gt; matches all {PROJECT, DATASET, SCREEN, PLATE, RUN, WELL}."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">Columns to exclude:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <img
-                      src="/web/static/webclient/image/info16.png"
-                      title="Add items to list, separated by ','"
-                    />
-                    <input
-                      id="Columns_to_exclude"
-                      tabindex="1"
-                      type="text"
-                      name="Columns to exclude"
-                      value="&lt;ID&gt;,&lt;NAME&gt;,&lt;PARENTS&gt;"
-                    />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="The column name in the CSV containing the objects IDs."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">Target ID colname:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <input
-                      id="Target_ID_colname"
-                      tabindex="1"
-                      type="text"
-                      name="Target ID colname"
-                      value="OBJECT_ID"
-                    />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="The column name in the CSV containing the objects names. (used only if the column ID is not found"
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">Target name colname:</td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <input
-                      id="Target_name_colname"
-                      tabindex="1"
-                      type="text"
-                      name="Target name colname"
-                      value="OBJECT_NAME"
-                    />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-          </div>
-        </div>
       </div>
+
+
+
       <div class="footer">
         <div style="float: right">
           <a href="#" tabindex="3" onClick="self.close()">Cancel</a>

@@ -45,5 +45,8 @@ def index(request, conn=None, **kwargs):
 @login_required()
 def import_from_csv(request, conn=None, **kwargs):
 
-    context = {}
+    script_service = conn.getScriptService()
+    sid = script_service.getScriptID("/omero/annotation_scripts/Import_from_csv.py")
+
+    context = {"script_id": sid}
     return render(request, "omero_scriptui/import_from_csv.html", context)

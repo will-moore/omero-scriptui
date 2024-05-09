@@ -126,8 +126,18 @@
         </div>
 
 
-        <div id="csv_info">
-          <h3>Drag and Drop your CSV file here...</h3>
+        <div>
+          <label title="The column name in the CSV containing the objects IDs.">Target Column (ID or Name)</label>
+          <select id="target_column">
+            <!-- options added when CSV loaded -->
+          </select>
+        </div>
+
+        <div id="csv_info" style="margin: 30px 0">
+          <div style="margin: 20px">
+            <h3>Drag and Drop your CSV file here...</h3>
+            (or enter File Annotation ID below)
+          </div>
         </div>
 
         <div class="required parent">
@@ -438,6 +448,7 @@
                     <!-- List - Users should enter comma-separated values into field -->
 
                     <input
+                      id="Target_ID_colname"
                       tabindex="1"
                       type="text"
                       name="Target ID colname"
@@ -461,6 +472,7 @@
                     <!-- List - Users should enter comma-separated values into field -->
 
                     <input
+                      id="Target_name_colname"
                       tabindex="1"
                       type="text"
                       name="Target name colname"
@@ -493,6 +505,10 @@
     <script>
       const SCRIPTUI_INDEX = "{% url 'omero_scriptui_index' %}";
 
+      // store Table data here when we load it...
+      // has 'header', 'rows', 'namespace', 'row_count'
+      let table_json = undefined;
+
       document.getElementById("File_Annotation").addEventListener("input", function(event){
         loadCsvFileAnnotation(event.target.value);
       })
@@ -507,6 +523,9 @@
             // TODO: show message to user
             console.error(data.Error);
           } else {
+            // Store for access later
+            table_json = data;
+            // Build a CSV table...
             let csv_table = `
               <table>
                 <tr>
@@ -519,9 +538,34 @@
               </table>
             `
             document.getElementById("csv_info").innerHTML = csv_table;
+
+            // Also put columns into target chooser - select OBJECT_ID if exists
+            let options = data.header.map(colName => `<option value="${colName}" ${colName == 'OBJECT_ID' && 'selected="true"'}>${colName}</option>`).join("\n")
+            options = `<option value=""> - please choose - </option>` + options;
+            document.getElementById("target_column").innerHTML = options;
           }
         })
       }
+
+      // When user chooses the target column, we check if it's an ID (number) column
+      // and update the `Target ID colname` and `Target name colname` fields
+      document.getElementById("target_column").addEventListener("input", function(event){
+        let colName = event.target.value;
+        // table JSON will be loaded already (since we can't choose column otherwise)
+        let colIndex = table_json.header.indexOf(colName);
+        let colValues = table_json.rows.map(row => row[colIndex]);
+        let isNumberCol = colValues.every(val => !isNaN(val));
+        if (isNumberCol) {
+          document.getElementById("Target_ID_colname").value = colName;
+          document.getElementById("Target_name_colname").value = "";
+        } else {
+          // If the user chose a NAME column to identify objects, we need
+          // to make sure that the `Target ID colname` field isn't used
+          document.getElementById("Target_ID_colname").value = "";
+          document.getElementById("Target_name_colname").value = colName;
+        }
+      });
+
 
       // Use Drag and Drop to upload a File and create a File-Annotation
       // Uses code from

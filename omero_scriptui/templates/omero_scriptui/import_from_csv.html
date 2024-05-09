@@ -115,6 +115,17 @@
         </h3>
         {% endif %}
 
+
+        <div style="margin: 10px 0">
+          Target Data Type: <span style="color: red">*</span>
+          <select tabindex="1" name="Target Data_Type">
+            {% for dtype in target_types %}
+              <option value="{% if dtype != source_dtype %}-- {% endif %}{{ dtype }}">{{ dtype }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+
         <div id="csv_info">
           <h3>Drag and Drop your CSV file here...</h3>
         </div>
@@ -173,33 +184,6 @@
                       title="Add items to list, separated by ','"
                     />
                     <input tabindex="1" type="text" name="IDs" value="{{ source_ids|join:',' }}" />
-
-                    <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
-                  </td>
-                </tr>
-              </table>
-            </div>
-
-            <div
-              class="param"
-              title="Data type to process from the selected parent objects."
-            >
-              <table border="0" cellpadding="0" cellspacing="1">
-                <tr>
-                  <td valign="top">
-                    Target Data Type:
-
-                    <span style="color: red">*</span>
-                  </td>
-                  <td valign="top">
-                    <!-- List - Users should enter comma-separated values into field -->
-
-                    <!-- drop-down list of enums -->
-                    <select tabindex="1" name="Target Data_Type">
-                      {% for dtype in target_types %}
-                        <option value="{% if dtype != source_dtype %}-- {% endif %}{{ dtype }}">{{ dtype }}</option>
-                      {% endfor %}
-                    </select>
 
                     <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
                   </td>

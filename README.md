@@ -24,6 +24,11 @@ open the index page of this app:
     $ omero config append omero.web.ui.top_links '["Script UI", "omero_scriptui_index", {"title": "Open Script UI in new tab", "target": "_blank"}]'
 
 
+Configure Open-with...
+
+    $ omero config append omero.web.open_with '["Import Annotations from CSV", "scriptui_import_from_csv", {"supported_objects": ["projects", "datasets", "images", "screens", "plates"]}]'
+
+
 Now restart your `omero-web` server and go to
 <http://localhost:4080/omero_scriptui/> in your browser.
 

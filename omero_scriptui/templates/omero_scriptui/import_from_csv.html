@@ -101,6 +101,12 @@
           <div><b>Version:</b> 2.0.0</div>
         </div>
 
+        {% if source_names %}
+        <h3>Annotating {{ source_dtype }}{{ source_names|pluralize }}:
+          {{ source_names|join:", " }}
+        </h3>
+        {% endif %}
+
         <div class="required parent">
           <div class="param" title="Data type of the parent objects.">
             <table border="0" cellpadding="0" cellspacing="1">
@@ -115,23 +121,21 @@
 
                   <!-- drop-down list of enums -->
                   <select tabindex="1" name="Data_Type">
-                    <option value="Project">Project</option>
+                    <option value="Project" {% if source_dtype == "Project" %}selected="True"{% endif %}>Project</option>
 
-                    <option value="Dataset" selected="True">Dataset</option>
+                    <option value="Dataset" {% if source_dtype == "Dataset" %}selected="True"{% endif %}>Dataset</option>
 
-                    <option value="Image">Image</option>
+                    <option value="Image" {% if source_dtype == "Image" %}selected="True"{% endif %}>Image</option>
 
-                    <option value="Screen">Screen</option>
+                    <option value="Screen" {% if source_dtype == "Screen" %}selected="True"{% endif %}>Screen</option>
 
-                    <option value="Plate">Plate</option>
+                    <option value="Plate" {% if source_dtype == "Plate" %}selected="True"{% endif %}>Plate</option>
 
-                    <option value="Well">Well</option>
+                    <option value="Well" {% if source_dtype == "Well" %}selected="True"{% endif %}>Well</option>
 
-                    <option value="Acquisition">Acquisition</option>
+                    <option value="Acquisition" {% if source_dtype == "Acquisition" %}selected="True"{% endif %}>Acquisition</option>
 
-                    <option value="Image">Image</option>
-
-                    <option value="Tag">Tag</option>
+                    <option value="Tag" {% if source_dtype == "Tag" %}selected="True"{% endif %}>Tag</option>
                   </select>
 
                   <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
@@ -156,7 +160,7 @@
                       src="/web/static/webclient/image/info16.png"
                       title="Add items to list, separated by ','"
                     />
-                    <input tabindex="1" type="text" name="IDs" value="" />
+                    <input tabindex="1" type="text" name="IDs" value="{{ source_ids|join:',' }}" />
 
                     <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
                   </td>
@@ -180,25 +184,9 @@
 
                     <!-- drop-down list of enums -->
                     <select tabindex="1" name="Target Data_Type">
-                      <option value="&lt;on current&gt;" selected="True">
-                        &lt;on current&gt;
-                      </option>
-
-                      <option value="Project">Project</option>
-
-                      <option value="- Dataset">- Dataset</option>
-
-                      <option value="-- Image">-- Image</option>
-
-                      <option value="Screen">Screen</option>
-
-                      <option value="- Plate">- Plate</option>
-
-                      <option value="-- Well">-- Well</option>
-
-                      <option value="-- Acquisition">-- Acquisition</option>
-
-                      <option value="--- Image">--- Image</option>
+                      {% for dtype in target_types %}
+                        <option value="{% if dtype != source_dtype %}-- {% endif %}{{ dtype }}">{{ dtype }}</option>
+                      {% endfor %}
                     </select>
 
                     <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->

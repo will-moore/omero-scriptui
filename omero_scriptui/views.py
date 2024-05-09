@@ -19,6 +19,18 @@ from django.shortcuts import render
 
 from omeroweb.decorators import login_required
 
+ALLOWED_PARAM = {
+    "Project": ["Project", "Dataset", "Image"],
+    "Dataset": ["Dataset", "Image"],
+    "Image": ["Image"],
+    "Screen": ["Screen", "Plate", "Well", "Acquisition", "Image"],
+    "Plate": ["Plate", "Well", "Acquisition", "Image"],
+    "Well": ["Well", "Image"],
+    "Acquisition": ["Acquisition", "Image"],
+    "Tag": ["Project", "Dataset", "Image",
+            "Screen", "Plate", "Well", "Acquisition"]
+}
+
 
 # login_required: if not logged-in, will redirect to webclient
 # login page. Then back to here, passing in the 'conn' connection
@@ -48,5 +60,24 @@ def import_from_csv(request, conn=None, **kwargs):
     script_service = conn.getScriptService()
     sid = script_service.getScriptID("/omero/annotation_scripts/Import_from_csv.py")
 
-    context = {"script_id": sid}
+    source_ids = []
+    source_names = []
+    source_dtype = None
+    target_types = []
+    for dtype in ALLOWED_PARAM.keys():
+        obj_ids = request.GET.getlist(dtype.lower())
+        if len(obj_ids) > 0:
+            source_dtype = dtype
+            target_types = ALLOWED_PARAM[dtype]
+            for obj in conn.getObjects(dtype, obj_ids):
+                source_names.append(obj.getName())
+                source_ids.append(obj.getId())
+            break
+
+    context = {"script_id": sid,
+               "source_dtype": source_dtype,
+               "source_names": source_names,
+               "source_ids": source_ids,
+               "target_types": target_types
+              }
     return render(request, "omero_scriptui/import_from_csv.html", context)

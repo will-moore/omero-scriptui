@@ -63,6 +63,9 @@
       a {
         text-decoration: none;
       }
+      .highlight {
+        background-color: yellow;
+      }
     </style>
 
     <!-- extend here to add page title -->
@@ -205,7 +208,7 @@
                   <td valign="top">
                     <!-- List - Users should enter comma-separated values into field -->
 
-                    <input tabindex="1" type="text" name="File_Annotation" />
+                    <input id="File_Annotation" tabindex="1" type="text" name="File_Annotation" />
 
                     <!-- If "File Annotation", allow user to choose file to upload, to create a File-Annotation -->
 
@@ -494,6 +497,86 @@
       </div>
     </form>
 
-    <!-- settings.BASE_INCLUDE_TEMPLATE included here -->
+    <script>
+      // https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+      let dropArea = document.getElementById('script_form');
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false)
+      })
+
+      function preventDefaults (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+
+      ;['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false)
+      })
+
+      ;['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false)
+      })
+
+      function highlight(e) {
+        dropArea.classList.add('highlight')
+      }
+
+      function unhighlight(e) {
+        dropArea.classList.remove('highlight')
+      }
+
+      dropArea.addEventListener('drop', handleDrop, false)
+
+      function handleDrop(e) {
+        let dt = e.dataTransfer
+        let files = dt.files
+
+        handleFiles(files)
+      }
+
+      function handleFiles(files) {
+        ([...files]).forEach(uploadFile)
+      }
+
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = cookies[i].trim();
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+        }
+        return cookieValue;
+      }
+      var csrftoken = getCookie('csrftoken');
+
+      function uploadFile(file) {
+        let url = '{% url "scriptui_post_file_annotation" %}'
+        let formData = new FormData()
+
+        formData.append('file_annotation', file)
+
+        fetch(url, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            "X-CSRFToken": csrftoken,
+          }
+        })
+        .then((rsp) => rsp.json())
+        .then(data => {
+          console.log(data);
+          document.getElementById("File_Annotation").value = data.fileAnnId;
+        })
+        .catch(() => { alert("File upload failed")})
+      }
+
+    </script>
+
   </body>
 </html>

@@ -25,4 +25,7 @@ urlpatterns = [
 
     re_path(r"^import_from_csv/$", views.import_from_csv,
             name="scriptui_import_from_csv"),
+
+    re_path(r"^post_file_annotation/$", views.post_file_annotation,
+            name="scriptui_post_file_annotation"),
 ]

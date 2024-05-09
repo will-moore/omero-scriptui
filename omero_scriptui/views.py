@@ -16,8 +16,10 @@
 #
 
 from django.shortcuts import render
+from django.http import JsonResponse
 
-from omeroweb.decorators import login_required
+from omeroweb.webclient.decorators import login_required
+from omeroweb.webclient.controller.container import BaseContainer
 
 ALLOWED_PARAM = {
     "Project": ["Project", "Dataset", "Image"],
@@ -81,3 +83,17 @@ def import_from_csv(request, conn=None, **kwargs):
                "target_types": target_types
               }
     return render(request, "omero_scriptui/import_from_csv.html", context)
+
+
+@login_required(setGroupContext=True)
+def post_file_annotation(request, conn=None, **kwargs):
+
+    fileupload = (
+        "file_annotation" in request.FILES and request.FILES["file_annotation"] or None
+    )
+    fileAnnId = None
+    if fileupload is not None and fileupload != "":
+        manager = BaseContainer(conn)
+        fileAnnId = manager.createFileAnnotations(fileupload, [])
+
+    return JsonResponse({'fileAnnId': fileAnnId})

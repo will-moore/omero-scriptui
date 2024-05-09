@@ -71,6 +71,9 @@
         max-width: 100%;
         max-height: 300px;
       }
+      .exclude td {
+        text-align: center;
+      }
     </style>
 
     <!-- extend here to add page title -->
@@ -425,6 +428,7 @@
                       title="Add items to list, separated by ','"
                     />
                     <input
+                      id="Columns_to_exclude"
                       tabindex="1"
                       type="text"
                       name="Columns to exclude"
@@ -504,6 +508,7 @@
 
     <script>
       const SCRIPTUI_INDEX = "{% url 'omero_scriptui_index' %}";
+      const DEFAULT_EXCLUDE = ["OBJECT_ID", "OBJECT_NAME", "PROJECT", "DATASET", "SCREEN", "PLATE", "RUN", "WELL"];
 
       // store Table data here when we load it...
       // has 'header', 'rows', 'namespace', 'row_count'
@@ -531,6 +536,14 @@
                 <tr>
                 ${data.header.map(colName => `<th>${colName}</th>`).join("")}
                 </tr>
+                <tr class="exclude" title="Exclude from Key-Value pairs">
+                ${data.header.map(colName => `<td>
+                  <label>exclude
+                    <input ${DEFAULT_EXCLUDE.includes(colName) && 'checked="true"'}
+                      name="exclude_${colName}" type='checkbox' onclick='syncExcluded()'>
+                  </label>
+                  </td>`).join("")}
+                </tr>
                 ${data.rows.map(row => `<tr>
                     ${row.map(val => `<td>${val}</td>`).join("")}
                   </tr>`
@@ -538,19 +551,31 @@
               </table>
             `
             document.getElementById("csv_info").innerHTML = csv_table;
+            // Update 'Columns_to_exclude' input
+            syncExcluded();
 
             // Also put columns into target chooser - select OBJECT_ID if exists
             let options = data.header.map(colName => `<option value="${colName}" ${colName == 'OBJECT_ID' && 'selected="true"'}>${colName}</option>`).join("\n")
-            options = `<option value=""> - please choose - </option>` + options;
+            options = `<option value=""> -- please choose -- </option>` + options;
             document.getElementById("target_column").innerHTML = options;
           }
         })
+      }
+
+      // Copy the excluded columns into the Columns_to_exclude input
+      function syncExcluded() {
+        let toExclude = table_json.header.filter(colName => {
+          return document.querySelector(`input[name="exclude_${colName}"]`).checked;
+        });
+        console.log('syncExcluded', toExclude);
+        document.getElementById("Columns_to_exclude").value = toExclude.join(",");
       }
 
       // When user chooses the target column, we check if it's an ID (number) column
       // and update the `Target ID colname` and `Target name colname` fields
       document.getElementById("target_column").addEventListener("input", function(event){
         let colName = event.target.value;
+        if (colName == "") return;
         // table JSON will be loaded already (since we can't choose column otherwise)
         let colIndex = table_json.header.indexOf(colName);
         let colValues = table_json.rows.map(row => row[colIndex]);
@@ -564,6 +589,9 @@
           document.getElementById("Target_ID_colname").value = "";
           document.getElementById("Target_name_colname").value = colName;
         }
+        // We also want to exclude this column from Key-Value pairs
+        document.querySelector(`input[name="exclude_${colName}"]`).checked = true;
+        syncExcluded();
       });
 
 

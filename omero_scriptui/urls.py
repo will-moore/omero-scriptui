@@ -28,4 +28,7 @@ urlpatterns = [
 
     re_path(r"^post_file_annotation/$", views.post_file_annotation,
             name="scriptui_post_file_annotation"),
+
+    re_path(r"^read_csv_annotation/(?P<annId>[0-9]+)/$", views.read_csv_annotation,
+            name="scriptui_read_csv_annotation"),
 ]

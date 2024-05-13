@@ -434,6 +434,20 @@
       });
 
 
+      // AJAX-form handling: Submits the form via AJAX and shows alert message.
+      document.getElementById('script_form').addEventListener('submit', function (event) {
+        var data = this;
+        fetch(data.getAttribute('action'), {
+          method: data.getAttribute('method'),
+          body: new FormData(data)
+        }).then(res=>res.text())
+          .then(function (data) {
+            alert("Script launched. Check the Activities in webclient for progress.")
+          });
+        event.preventDefault();
+      });
+
+
       // Use Drag and Drop to upload a File and create a File-Annotation
       // Uses code from
       // https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/

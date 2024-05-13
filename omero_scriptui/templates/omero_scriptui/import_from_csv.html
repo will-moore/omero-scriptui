@@ -162,6 +162,16 @@
           <input id="File_Annotation" tabindex="1" type="text" name="File_Annotation" />
         </label>
 
+        <label title="Separator used in the CSV file. &#x27;guess&#x27; will attempt to detetect automatically which of ,;\t to use.">
+          CSV separator:
+          <select tabindex="1" name="CSV separator">
+            <option value="guess" selected="True">guess</option>
+            <option value=";">;</option>
+            <option value=",">,</option>
+            <option value="TAB">TAB</option>
+          </select>
+        </label>
+
         <label title="Namespace assigned to the key-value pairs. Default is the client namespace (editable in OMERO.web).">
           Namespace (blank for default or from csv):
           <input
@@ -179,16 +189,6 @@
             name="Exclude empty values"
             checked="True"
           />
-        </label>
-
-        <label title="Separator used in the CSV file. &#x27;guess&#x27; will attempt to detetect automatically which of ,;\t to use.">
-          CSV separator:
-          <select tabindex="1" name="CSV separator">
-            <option value="guess" selected="True">guess</option>
-            <option value=";">;</option>
-            <option value=",">,</option>
-            <option value="TAB">TAB</option>
-          </select>
         </label>
 
         <label title="Separator used to split cells into multiple key-value pairs.">
@@ -353,19 +353,24 @@
       // has 'header', 'rows', 'namespace', 'row_count'
       let table_json = undefined;
 
+      // When user changes FileAnnotation or CSV separator, load CSV
       document.getElementById("File_Annotation").addEventListener("input", function(event){
-        loadCsvFileAnnotation(event.target.value);
-      })
+        loadCsvFileAnnotation();
+      });
+      document.querySelector('select[name="CSV separator"]').addEventListener("input", function(event){
+        loadCsvFileAnnotation();
+      });
 
-      function loadCsvFileAnnotation(annId) {
-        let url = `${SCRIPTUI_INDEX}read_csv_annotation/${annId}/`;
+      function loadCsvFileAnnotation() {
+        let annId = document.getElementById("File_Annotation").value;
+        let separator = document.querySelector('select[name="CSV separator"]').value;
+
+        let url = `${SCRIPTUI_INDEX}read_csv_annotation/${annId}/?separator=${separator}`;
 
         fetch(url).then(rsp => rsp.json())
         .then(data => {
-          console.log(data);
           if (data.Error) {
-            // TODO: show message to user
-            console.error(data.Error);
+            alert(`${data.Error} \nTry choosing a different CSV separator below.`);
           } else {
             // Store for access later
             table_json = data;
@@ -527,7 +532,7 @@
           console.log(data);
           // update the form and also load CSV
           document.getElementById("File_Annotation").value = data.fileAnnId;
-          loadCsvFileAnnotation(data.fileAnnId);
+          loadCsvFileAnnotation();
         })
         .catch(() => { alert("File upload failed")})
       }

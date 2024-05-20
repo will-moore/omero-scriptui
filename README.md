@@ -30,6 +30,35 @@ In the case of `Import_from_csv.py`, the following improvements were made:
  - Display the chosen CSV file as an html table with options for choosing columns.
  - Allow the user to select a table column that contains target object identifiers.
 
+
+Add a JavaScript Framework and build tool
+-----------------------------------------
+
+We'll use [vite.js](https://vitejs.dev/) to build our JavaScript bundle, choosing the same
+name for our project as above: `omero-scriptui`. I have also chosen to use React and
+Vanilla JavaScript...
+
+    cd omero-scriptui
+    mkdir TEMP && cd TEMP
+    npm create vite@latest
+    ✔ Project name: … omero-scriptui
+    ✔ Select a framework: › React
+    ✔ Select a variant: › JavaScript
+
+    # Combine the projects:
+    cat omero-scriptui/.gitignore >> ../omero-scriptui/.gitignore
+    rm omero-scriptui/.gitignore 
+    rm omero-scriptui/README.md     # don't need this
+    mv omero-scriptui/* ../omero-scriptui/
+    mv omero-scriptui/.eslintrc.cjs ../omero-scriptui/
+    cd ../ && rm -rf TEMP
+
+    # we can now run Vite dev server
+    cd omero-scriptui
+    npm install
+    npm run dev
+
+
 Installation
 ============
 

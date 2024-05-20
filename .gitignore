@@ -1,5 +1,7 @@
 build
 *.pyc
+omero_scriptui/static/omero_scriptui/assets/*
+omero_scriptui/templates/omero_scriptui/
 
 # Logs
 logs

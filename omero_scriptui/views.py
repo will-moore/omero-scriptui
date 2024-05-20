@@ -16,7 +16,10 @@
 #
 
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+
+from django.template import loader
+from django.templatetags import static
 
 from omeroweb.webclient.decorators import login_required
 from omeroweb.webclient.controller.container import BaseContainer
@@ -55,8 +58,18 @@ def index(request, conn=None, **kwargs):
     # print can be useful for debugging, but remove in production
     # print('context', context)
 
-    # Render the html template and return the http response
-    return render(request, "omero_scriptui/index.html", context)
+    # index.html is not formatted as a Django template,
+    # since we want to serve it from Vite.js during development
+    # Load the index.html and replace OMEROWEB_INDEX
+    template = loader.get_template("omero_scriptui/index.html")
+    html = template.render({}, request)
+
+    # update links to static files
+    static_dir = static.static('omero_scriptui/')
+    html = html.replace('href="/', 'href="%s' % static_dir)
+    html = html.replace('src="/', 'src="%s' % static_dir)
+
+    return HttpResponse(html)
 
 
 @login_required()

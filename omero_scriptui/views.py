@@ -17,6 +17,7 @@
 
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
 
 from django.template import loader
 from django.templatetags import static
@@ -24,7 +25,6 @@ from django.templatetags import static
 from omeroweb.webclient.decorators import login_required
 from omeroweb.webclient.controller.container import BaseContainer
 
-from omero.model import OriginalFileI
 from .util import read_csv
 
 ALLOWED_PARAM = {
@@ -68,6 +68,10 @@ def index(request, conn=None, **kwargs):
     static_dir = static.static('omero_scriptui/')
     html = html.replace('href="/', 'href="%s' % static_dir)
     html = html.replace('src="/', 'src="%s' % static_dir)
+
+    omeroweb_index = reverse("index")
+    html = html.replace('const BASE_OMEROWEB_URL = DEV_OMEROWEB_URL;',
+                        'const BASE_OMEROWEB_URL = "%s";' % omeroweb_index)
 
     return HttpResponse(html)
 
